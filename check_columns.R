@@ -3,7 +3,7 @@ available_columns <- c(
   "gender", "Age", "HT", "T2DM", "PE", "CI", "MI", "HAEM", "HyperT",
   "CA", "LTUH", "CRD", "CHF", "CLD", "CKD", "WBC", "NEPER", "LYMPH",
   "HGB", "PLT", "CRP", "PCT", "PT", "INR", "APTT", "TBIL", "BUN",
-  "CREA", "NTproBNP", "TNI", "Lac", "OIPaO2_FiO2", "SOFA", "GCS",
+  "CREA", "NTproBNP", "TNI", "Lac", "PaO2_FiO2", "SOFA", "GCS",
   "HR", "RR", "BP", "T", "CD3_PER", "CD3_CD4_PER", "CD3_CD8_PER",
   "CD3_CD4__CD3_CD8", "CD3", "CD3_CD4", "CD3_CD8", "CD3_CD16__CD56_PER",
   "CD3_CD16__CD56", "BCD19PER", "BCD19", "N_CT", "ORF1AB_CT"

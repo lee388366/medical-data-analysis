@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "arxiv-mcp-server": {
+      "command": "uv",
+      "args": [
+        "tool",
+        "run",
+        "arxiv-mcp-server",
+        "--storage-path", "/Users/你的用户名/arxiv_papers"
+      ]
+    }
+  },
+  "servers": [
+    {
+      "name": "sequential-thinking",
+      "type": "sequential-thinking"
+    }
+  ],
+  "rules": [
+    {
+      "name": "复杂任务自动调用 sequential-thinking",
+      "description": "当用户输入包含‘多步骤’、‘推理’、‘依赖’、‘复杂任务’等关键词时，自动调用 sequential-thinking。",
+      "trigger": {
+        "type": "regex",
+        "pattern": "(多步骤|推理|依赖|复杂任务)"
+      },
+      "action": {
+        "type": "use_tool",
+        "tool": "sequential-thinking"
+      }
+    }
+  ]
+} 

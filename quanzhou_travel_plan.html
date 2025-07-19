@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>泉州2天宝藏美食游规划表</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --a4-width: 210mm;
+      --a4-height: 297mm;
+      --margin: 10mm;
+      --main-font: 'Noto Sans SC', Arial, sans-serif;
+      --gray: #222;
+      --light-gray: #f7f7f7;
+      --border: #bbb;
+      --accent: #3b82f6;
+      --food: #e67e22;
+      --sight: #16a085;
+      --traffic: #8e44ad;
+    }
+    @page {
+      size: A4;
+      margin: var(--margin);
+    }
+    html, body {
+      width: var(--a4-width);
+      height: var(--a4-height);
+      margin: 0;
+      padding: 0;
+      background: white;
+      font-family: var(--main-font);
+      color: var(--gray);
+      font-size: 13px;
+    }
+    body {
+      box-sizing: border-box;
+      padding: var(--margin);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      height: calc(var(--a4-height) - 2 * var(--margin));
+    }
+    header {
+      grid-column: 1/3;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 6px;
+    }
+    header h1 {
+      font-size: 2em;
+      margin: 0 0 4px 0;
+      letter-spacing: 2px;
+    }
+    .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 1em;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .overview, .tips, .contacts {
+      background: var(--light-gray);
+      border-radius: 6px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .overview {
+      grid-column: 1/3;
+    }
+    .timeline {
+      grid-column: 1/3;
+      margin-top: 0;
+    }
+    .timeline table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1em;
+      background: white;
+    }
+    .timeline th, .timeline td {
+      border: 1px solid var(--border);
+      padding: 4px 6px;
+      text-align: center;
+    }
+    .timeline th {
+      background: #eee;
+      font-weight: bold;
+    }
+    .icon {
+      font-size: 1.1em;
+      margin-right: 2px;
+    }
+    .food { color: var(--food); }
+    .sight { color: var(--sight); }
+    .traffic { color: var(--traffic); }
+    .hotel { color: #c0392b; }
+    .tips, .contacts {
+      font-size: 0.95em;
+      margin-top: 4px;
+    }
+    .contacts ul, .tips ul {
+      margin: 0 0 0 1em;
+      padding: 0;
+    }
+    .print-btn {
+      position: absolute;
+      top: 16px;
+      right: 32px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-size: 1em;
+      cursor: pointer;
+      z-index: 100;
+      transition: background 0.2s;
+    }
+    .print-btn:hover {
+      background: #2563eb;
+    }
+    @media print {
+      .print-btn { display: none; }
+      body { box-shadow: none; }
+    }
+    .cut-line {
+      position: absolute;
+      left: 0; right: 0; top: var(--margin); bottom: var(--margin);
+      border-top: 1px dashed #bbb;
+      border-bottom: 1px dashed #bbb;
+      pointer-events: none;
+    }
+    /* 移动端优化 */
+    @media (max-width: 600px) {
+      html, body {
+        width: 100vw;
+        height: auto;
+        min-height: 100vh;
+        font-size: 15px;
+        padding: 0;
+      }
+      body {
+        padding: 0 0 16px 0;
+        gap: 0;
+      }
+      .container {
+        display: block;
+        width: 100vw;
+        height: auto;
+        padding: 0;
+      }
+      header {
+        border-bottom: 1.5px solid var(--border);
+        padding: 10px 0 8px 0;
+      }
+      .overview, .tips, .contacts {
+        border-radius: 0;
+        margin: 0 0 14px 0;
+        padding: 12px 6vw;
+        font-size: 1em;
+      }
+      .timeline {
+        margin: 0 0 18px 0;
+      }
+      .timeline table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .timeline thead, .timeline tbody, .timeline tr {
+        display: table;
+        width: 100%;
+      }
+      .timeline th, .timeline td {
+        min-width: 90px;
+        font-size: 1em;
+        padding: 8px 4px;
+      }
+      .print-btn {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        padding: 8px 18px;
+        font-size: 1.1em;
+        z-index: 999;
+      }
+      .cut-line {
+        display: none;
+      }
+      .meta {
+        flex-direction: column;
+        gap: 6px;
+        font-size: 1em;
+      }
+      .overview div, .overview a {
+        width: 100%;
+        display: block;
+      }
+      .overview a, .overview .fa-route, .overview .fa-map {
+        font-size: 1.1em;
+      }
+      .overview a {
+        margin: 10px 0 0 0 !important;
+        padding: 12px 0 !important;
+        font-size: 1.1em !important;
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()"><i class="fa fa-print"></i> 打印</button>
+  <div class="cut-line"></div>
+  <div class="container">
+    <header>
+      <h1>泉州2天宝藏美食游规划表</h1>
+      <div class="meta">
+        <span><i class="fa fa-map-marker-alt sight"></i> 泉州</span>
+        <span><i class="fa fa-calendar-alt"></i> 2024年7月19日-7月21日</span>
+        <span><i class="fa fa-user"></i> 旅行者：________</span>
+        <span><i class="fa fa-cloud"></i> 天气：多云/阵雨 27~34°C</span>
+      </div>
+    </header>
+    <section class="overview" style="background:#f3f6fa;border:1.5px solid #bcd;">
+      <strong>规划表说明：</strong>
+      <ul style="margin:6px 0 0 1.2em;font-size:0.98em;">
+        <li>本规划表采用A4纸单页设计，适合打印随身携带，信息分区清晰，便于查阅。</li>
+        <li>行程以泉州宝藏美食体验为主线，结合慢生活与小众体验，避开常规“打卡”景点。</li>
+        <li>使用高对比度配色、现代字体和Font Awesome图标，区分美食、体验、交通等不同活动。</li>
+        <li>表格与时间轴布局，简明直观，重要信息有视觉强调，适合黑白打印。</li>
+        <li>附带美食地图导航、实用提示和紧急电话，助你轻松畅游泉州。</li>
+      </ul>
+      <div style="margin-top:10px;">
+        <a href="https://uri.amap.com/navigation?from=118.5895,24.9152,钟楼肉粽店&to=118.5899,24.9172,百源川池|118.5875,24.9148,阿明面线糊|118.5872,24.9141,阿芳姜母鸭|118.5865,24.9135,拾光咖啡&mode=walk" target="_blank" rel="noopener" style="display:inline-block;margin:4px 8px 4px 0;padding:6px 14px;background:#e67e22;color:#fff;border-radius:4px;text-decoration:none;font-weight:bold;"><i class="fa fa-route"></i> Day 1 路线规划</a>
+        <a href="https://uri.amap.com/navigation?from=118.7985,24.9912,惠安阿婆扁食&to=118.7980,24.9900,惠安本地集市|118.7992,24.9925,阿香海鲜粥|118.5890,24.8030,五店市历史街区|118.6480,24.7310,石狮沙茶面老店&mode=car" target="_blank" rel="noopener" style="display:inline-block;margin:4px 0 4px 0;padding:6px 14px;background:#16a085;color:#fff;border-radius:4px;text-decoration:none;font-weight:bold;"><i class="fa fa-route"></i> Day 2 路线规划</a>
+      </div>
+      <!-- Day 1 路线卡片 -->
+      <div style="margin:18px 0 10px 0;padding:16px 10px 12px 10px;background:#fff;border-radius:12px;box-shadow:0 2px 10px 0 #e6e6e6;max-width:700px;">
+        <div style="font-weight:bold;font-size:1.1em;margin-bottom:8px;"><i class="fa fa-walking food"></i> Day 1 步行美食路线</div>
+        <ol style="padding-left:1.2em;margin-bottom:10px;">
+          <li>钟楼肉粽店 <span style="color:#888;font-size:0.95em;">(起点)</span></li>
+          <li>百源川池</li>
+          <li>阿明面线糊</li>
+          <li>阿芳姜母鸭</li>
+          <li>拾光咖啡</li>
+          <li>小西埕夜市</li>
+          <li>阿吉四果汤 <span style="color:#888;font-size:0.95em;">(终点)</span></li>
+        </ol>
+        <div style="border-top:1px dashed #ccc;margin:8px 0 10px 0;"></div>
+        <ul style="list-style:none;padding:0;margin:0 0 8px 0;font-size:0.98em;">
+          <li><b>1→2</b>：步行225米，约3分钟。沿新街向北。
+            <a href="https://uri.amap.com/navigation?from=118.5895,24.9152,钟楼肉粽店&to=118.5899,24.9172,百源川池&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去百源川池</a>
+          </li>
+          <li><b>2→3</b>：步行414米，约5分钟。新街南行，右转清军衙。
+            <a href="https://uri.amap.com/navigation?from=118.5899,24.9172,百源川池&to=118.5875,24.9148,阿明面线糊&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去阿明面线糊</a>
+          </li>
+          <li><b>3→4</b>：步行77米，约1分钟。台魁巷南行。
+            <a href="https://uri.amap.com/navigation?from=118.5875,24.9148,阿明面线糊&to=118.5872,24.9141,阿芳姜母鸭&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去阿芳姜母鸭</a>
+          </li>
+          <li><b>4→5</b>：步行471米，约6分钟。台魁巷南行，西街西行，北转后东行。
+            <a href="https://uri.amap.com/navigation?from=118.5872,24.9141,阿芳姜母鸭&to=118.5865,24.9135,拾光咖啡&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去拾光咖啡</a>
+          </li>
+          <li><b>5→6</b>：步行72米，约1分钟。东行后北转。
+            <a href="https://uri.amap.com/navigation?from=118.5865,24.9135,拾光咖啡&to=118.5870,24.9140,小西埕夜市&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去小西埕夜市</a>
+          </li>
+          <li><b>6→7</b>：步行653米，约8分钟。西南、南、东、北多次转弯。
+            <a href="https://uri.amap.com/navigation?from=118.5870,24.9140,小西埕夜市&to=118.5878,24.9146,阿吉四果汤&mode=walk" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去阿吉四果汤</a>
+          </li>
+        </ul>
+        <a href="https://uri.amap.com/navigation?from=118.5895,24.9152,钟楼肉粽店&to=118.5899,24.9172,百源川池|118.5875,24.9148,阿明面线糊|118.5872,24.9141,阿芳姜母鸭|118.5865,24.9135,拾光咖啡&mode=walk" target="_blank" rel="noopener" style="display:inline-block;margin:8px 0 0 0;padding:10px 0;width:100%;background:#e67e22;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;text-align:center;"><i class="fa fa-map-marked-alt"></i> 一键步行导航（前5点）</a>
+      </div>
+      <!-- Day 2 路线卡片 -->
+      <div style="margin:0 0 18px 0;padding:16px 10px 12px 10px;background:#fff;border-radius:12px;box-shadow:0 2px 10px 0 #e6e6e6;max-width:700px;">
+        <div style="font-weight:bold;font-size:1.1em;margin-bottom:8px;"><i class="fa fa-car traffic"></i> Day 2 驾车美食路线</div>
+        <ol style="padding-left:1.2em;margin-bottom:10px;">
+          <li>惠安阿婆扁食 <span style="color:#888;font-size:0.95em;">(起点)</span></li>
+          <li>惠安本地集市</li>
+          <li>阿香海鲜粥</li>
+          <li>五店市历史街区</li>
+          <li>石狮沙茶面老店</li>
+          <li>晋江阿财牛排 <span style="color:#888;font-size:0.95em;">(终点)</span></li>
+        </ol>
+        <div style="border-top:1px dashed #ccc;margin:8px 0 10px 0;"></div>
+        <ul style="list-style:none;padding:0;margin:0 0 8px 0;font-size:0.98em;">
+          <li><b>1→2</b>：驾车407米，约1分钟。西行233米左转，东南174米。
+            <a href="https://uri.amap.com/navigation?from=118.7985,24.9912,惠安阿婆扁食&to=118.7980,24.9900,惠安本地集市&mode=car" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去惠安本地集市</a>
+          </li>
+          <li><b>2→3</b>：驾车757米，约2分钟。西北174米右转，东458米左转，西北125米。
+            <a href="https://uri.amap.com/navigation?from=118.7980,24.9900,惠安本地集市&to=118.7992,24.9925,阿香海鲜粥&mode=car" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去阿香海鲜粥</a>
+          </li>
+          <li><b>3→4</b>：驾车45公里，约62分钟。途经迎宾东路、324国道、S56南惠支线高速、G15沈海高速、机场连接线等。
+            <a href="https://uri.amap.com/navigation?from=118.7992,24.9925,阿香海鲜粥&to=118.5890,24.8030,五店市历史街区&mode=car" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去五店市历史街区</a>
+          </li>
+          <li><b>4→5</b>：驾车13公里，约41分钟。和平路、莲溪路、鞋都路、海宁路、福辉路等。
+            <a href="https://uri.amap.com/navigation?from=118.5890,24.8030,五店市历史街区&to=118.6480,24.7310,石狮沙茶面老店&mode=car" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去石狮沙茶面老店</a>
+          </li>
+          <li><b>5→6</b>：驾车13公里，约49分钟。子芳路、阳光路、和平中路等。
+            <a href="https://uri.amap.com/navigation?from=118.6480,24.7310,石狮沙茶面老店&to=118.5895,24.8210,晋江阿财牛排&mode=car" target="_blank" rel="noopener" style="margin-left:8px;padding:4px 12px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;font-size:0.97em;"><i class='fa fa-location-arrow'></i> 去晋江阿财牛排</a>
+          </li>
+        </ul>
+        <a href="https://uri.amap.com/navigation?from=118.7985,24.9912,惠安阿婆扁食&to=118.7980,24.9900,惠安本地集市|118.7992,24.9925,阿香海鲜粥|118.5890,24.8030,五店市历史街区|118.6480,24.7310,石狮沙茶面老店&mode=car" target="_blank" rel="noopener" style="display:inline-block;margin:8px 0 0 0;padding:10px 0;width:100%;background:#16a085;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;text-align:center;"><i class="fa fa-map-marked-alt"></i> 一键驾车导航（前5点）</a>
+      </div>
+    </section>
+    <section class="timeline">
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>活动</th>
+            <th>地点</th>
+            <th>美食推荐</th>
+            <th>交通/备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Day 1 -->
+          <tr>
+            <td>08:00-09:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 早餐</td>
+            <td>钟楼肉粽店</td>
+            <td>烧肉粽、面线糊</td>
+            <td>步行/打车</td>
+          </tr>
+          <tr>
+            <td>09:00-10:00</td>
+            <td><span class="sight"><i class="fa fa-water"></i></span> 百源川池闲逛</td>
+            <td>鲤城区百源川池</td>
+            <td></td>
+            <td>步行</td>
+          </tr>
+          <tr>
+            <td>10:00-11:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 阿明面线糊</td>
+            <td>西街</td>
+            <td>面线糊、四果汤</td>
+            <td>步行</td>
+          </tr>
+          <tr>
+            <td>11:00-13:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 午餐</td>
+            <td>小西埕·阿芳姜母鸭</td>
+            <td>姜母鸭、闽南卤面</td>
+            <td>步行/打车</td>
+          </tr>
+          <tr>
+            <td>13:00-15:00</td>
+            <td><span class="sight"><i class="fa fa-coffee"></i></span> 拾光咖啡/手作体验</td>
+            <td>西街/花巷</td>
+            <td>咖啡、甜品</td>
+            <td>步行</td>
+          </tr>
+          <tr>
+            <td>17:30-19:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 晚餐</td>
+            <td>小西埕夜市</td>
+            <td>海蛎煎、牛排、花生汤</td>
+            <td>步行</td>
+          </tr>
+          <tr>
+            <td>19:00-21:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 夜宵</td>
+            <td>阿吉四果汤</td>
+            <td>四果汤、花生汤</td>
+            <td>步行</td>
+          </tr>
+          <!-- Day 2 -->
+          <tr>
+            <td>08:00-09:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 早餐</td>
+            <td>惠安阿婆扁食</td>
+            <td>扁食、花生汤</td>
+            <td>打车</td>
+          </tr>
+          <tr>
+            <td>09:00-10:30</td>
+            <td><span class="sight"><i class="fa fa-store"></i></span> 惠安本地集市/风情体验</td>
+            <td>惠安县城</td>
+            <td></td>
+            <td>步行</td>
+          </tr>
+          <tr>
+            <td>11:30-13:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 午餐</td>
+            <td>阿香海鲜粥</td>
+            <td>海鲜粥、卤面</td>
+            <td>步行/打车</td>
+          </tr>
+          <tr>
+            <td>13:00-15:00</td>
+            <td><span class="sight"><i class="fa fa-archway"></i></span> 五店市历史街区</td>
+            <td>晋江</td>
+            <td></td>
+            <td>打车</td>
+          </tr>
+          <tr>
+            <td>17:30-19:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 晚餐</td>
+            <td>石狮沙茶面老店</td>
+            <td>沙茶面、蚝仔煎</td>
+            <td>打车</td>
+          </tr>
+          <tr>
+            <td>19:00-21:00</td>
+            <td><span class="food"><i class="fa fa-utensils"></i></span> 夜宵</td>
+            <td>晋江阿财牛排</td>
+            <td>牛排、卤面</td>
+            <td>打车/步行</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="tips">
+      <strong>实用提示：</strong>
+      <ul>
+        <li>泉州夏季高温湿热，建议早晚出行，午间适当休息</li>
+        <li>宝藏美食店高峰时段需排队，建议错峰用餐</li>
+        <li>部分小店仅收现金或微信，建议备好零钱</li>
+        <li>推荐使用大众点评/高德地图查找实时评价和导航</li>
+        <li>夜市人多，注意保管随身物品</li>
+        <li>备好防晒、雨具，穿着轻便</li>
+      </ul>
+    </section>
+    <section class="contacts">
+      <strong>重要电话：</strong>
+      <ul>
+        <li>旅游咨询：0595-12301</li>
+        <li>报警/急救：110 / 120</li>
+        <li>泉州火车站：0595-22227777</li>
+        <li>泉州出租车：0595-22986666</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html> 

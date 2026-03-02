@@ -6,7 +6,8 @@
 -- Notes:
 -- - Uses mimiciv_derived.icustay_detail + sepsis3 + weight_durations
 -- - Excludes ESRD / renal transplant via ICD9/10 (mimiciv_hosp.diagnoses_icd, codes without dots).
--- - intime/outtime → icu_intime/icu_outtime; age → admission_age; insurance from admissions.
+-- - intime/outtime from icu_intime/icu_outtime; age from admission_age; insurance from admissions.
+-- - Qualified column names (i./a.) to avoid ambiguity.
 -- ============================================================
 
 CREATE SCHEMA IF NOT EXISTS data_extract_crrt;
@@ -17,16 +18,18 @@ CREATE MATERIALIZED VIEW data_extract_crrt."101_patients_core_cohort_sepsis" AS
 WITH
 icud AS (
   SELECT
-    stay_id, subject_id, hadm_id,
-    icu_intime AS intime,
-    icu_outtime AS outtime,
-    admission_age AS age,
-    gender,
-    race,
+    i.stay_id,
+    i.subject_id,
+    i.hadm_id,
+    i.icu_intime AS intime,
+    i.icu_outtime AS outtime,
+    i.admission_age AS age,
+    i.gender,
+    i.race,
     a.insurance,
-    icu_intime,
-    icu_outtime,
-    los_icu
+    i.icu_intime,
+    i.icu_outtime,
+    i.los_icu
   FROM mimiciv_derived.icustay_detail i
   LEFT JOIN mimiciv_hosp.admissions a ON a.hadm_id = i.hadm_id
 ),
@@ -34,7 +37,7 @@ icud AS (
 first_icu AS (
   SELECT
     i.*,
-    ROW_NUMBER() OVER (PARTITION BY subject_id ORDER BY intime) AS rn
+    ROW_NUMBER() OVER (PARTITION BY i.subject_id ORDER BY i.intime) AS rn
   FROM icud i
 ),
 
@@ -93,3 +96,6 @@ CREATE INDEX IF NOT EXISTS idx_101_core_hadm
   ON data_extract_crrt."101_patients_core_cohort_sepsis"(hadm_id);
 
 ANALYZE data_extract_crrt."101_patients_core_cohort_sepsis";
+
+-- 输出前 500 行，便于在 Navicat 结果窗口看到表格
+SELECT * FROM data_extract_crrt."101_patients_core_cohort_sepsis" LIMIT 500;

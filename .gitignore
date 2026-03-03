@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# R
+.RData
+.Rhistory
+*.Rproj.user
+
+# Env / IDE
+.env
+.venv
+*.log

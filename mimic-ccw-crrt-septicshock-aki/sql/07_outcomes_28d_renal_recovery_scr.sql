@@ -6,7 +6,8 @@
 -- Definitions:
 --   scr_baseline: MIN creatinine in [admittime, t0]
 --   scr_28d: last creatinine in (t0, t0+28d]
---   death_28d: deathtime in (t0, t0+28d]; alive_28d: deathtime NULL or > t0+28d
+--   death_7d / alive_7d: deathtime in (t0, t0+7d] or NULL/>t0+7d（次要结局用）
+--   death_28d / alive_28d: deathtime in (t0, t0+28d] or NULL/>t0+28d
 --   renal_recovery_28d_scr: alive_28d=1 AND scr_28d <= 1.5*scr_baseline
 --
 -- Optimizations (postgres-patterns): Explicit cohort; scr_28d as LATERAL; B-tree indexes; Navicat.
@@ -60,6 +61,14 @@ mort AS (
     CASE
       WHEN a.deathtime IS NOT NULL
        AND a.deathtime > c.t0_time
+       AND a.deathtime <= c.t0_time + interval '7 day'
+      THEN 1 ELSE 0 END AS death_7d,
+    CASE
+      WHEN a.deathtime IS NULL OR a.deathtime > c.t0_time + interval '7 day'
+      THEN 1 ELSE 0 END AS alive_7d,
+    CASE
+      WHEN a.deathtime IS NOT NULL
+       AND a.deathtime > c.t0_time
        AND a.deathtime <= c.t0_time + interval '28 day'
       THEN 1 ELSE 0 END AS death_28d,
     CASE
@@ -74,6 +83,8 @@ SELECT
   c.stay_id,
   c.t0_time,
   m.deathtime,
+  m.death_7d,
+  m.alive_7d,
   m.death_28d,
   m.alive_28d,
   b.scr_baseline,

@@ -1,6 +1,7 @@
 analysis/
 01_prepare_ccw_dataset.R
-02_compute_ipcw.R
-03_survival_analysis.R
-04_rmst_rmtl_analysis.R
-05_subgroup_analysis.R
+02_compute_ipcw_weights.R
+03_weight_diagnostics.R
+04_survival_analysis.R
+05_rmst_rmtl_analysis.R
+06_subgroup_forest_plot.R

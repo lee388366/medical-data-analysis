@@ -60,8 +60,7 @@
 
 ### 6. R 脚本尚未实现
 
-- **analysis_1/README.md** 仅列出计划脚本：01_prepare_ccw_dataset.R、02_compute_ipcw.R、03_survival_analysis.R、04_rmst_rmtl_analysis.R、05_subgroup_analysis.R。
-- 仓库内无 .R 文件，R 端逻辑尚未实现；07/08 的表名、clone_id 等需与 R 约定一致（当前 08 无 clone_id，需在 R 里用 stay_id + strategy 生成）。
+- **analysis_1/** 下已有 R 脚本：01_prepare_ccw_dataset.R、02_compute_ipcw.R、03_survival_analysis.R、04__survival_analysis.R、05_rmst_rmtl_analysis.R、06_subgroup_forest_plot.R、07_ipcw_and_riskdiff_plots.R 等，依赖 08/07/05/09 产出的表（ccw_clone_long_0_24h_1h_v2、outcomes_28d_renal_v1、cohort_baseline_v1、subgroup_flags_v1）。08 无 clone_id 列，R 里需用 stay_id + strategy 生成克隆标识。
 
 ### 7. 03 与 00 的 RRT 判定
 
@@ -84,7 +83,7 @@
 
 ## 五、当前无 R 文件
 
-- analysis_1 下仅有 README.md（脚本列表），无 .R 文件。
+- analysis_1 下已有 R 脚本（01–07 等），与 SQL 表名一致；README 列出计划/实际脚本对应关系。
 - 若要在本仓实现 01–05 的 R 流程，需从 08/07/505/909 导出 CSV 或连库，并约定：outcomes 表名 = outcomes_28d_renal_v1；clone 标识 = (stay_id, strategy)；IPCW 协变量见 docs_IPCW_covariate_checklist（若已同步到本仓）。
 
 上述逻辑问题修好后，run_all 可完整跑通，且与 README、docs 及后续 R 分析一致。

@@ -1,216 +1,150 @@
 -- ============================================================
--- 05) Baseline Table 1 dataset (t0-6h, t0]
--- Output:
---   data_extract_crrt.cohort_baseline_v1
--- Notes:
---   Uses "last observation" (single latest charttime/endtime per table) in baseline window.
---   Performance: LATERAL join per table (one scan per cohort row) instead of many scalar subqueries.
+-- 09) Subgroup flags (baseline-defined) for effect modification & forest plot
+-- Output: data_extract_crrt.subgroup_flags_v1
 --
--- 本地 MIMIC 表/列已核对：
---   weight_durations; charlson; vitalsign; chemistry(bun，无 urea_nitrogen); enzyme(ast,alt); bg(po2,fio2); coagulation; complete_blood_count;
---   ventilation; vasoactive_agent; norepinephrine_equivalent_dose(starttime,endtime); sofa(sofa_24hours,endtime).
+-- Windows / rules:
+--   All subgroup variables at baseline: (t0 - 6h, t0]
+--   "Last observation" for labs/vitals; 6h urine rate for oliguria
+--   NE equiv unit: µg/kg/min (mcg/kg/min)
 --
--- 本地已查：mimiciv_derived 下当前无索引。下方索引为 baseline 加速用，执行一次即可（与建 MV 同次或先跑均可）。
+-- Depends on:
+--   data_extract_crrt."301_ss_aki3_t0_no_rrt_cohort"
+--   data_extract_crrt.cohort_baseline_v1 (05)
+--   mimiciv_derived.urine_output, mimiciv_derived.kdigo_stages
+--
+-- Navicat: run full script to create MV; then run only last SELECT to view table.
 -- ============================================================
 
 CREATE SCHEMA IF NOT EXISTS data_extract_crrt;
 
--- 步骤 1：为 LATERAL 查找建索引（无索引时 baseline 会极慢）。若已建过可跳过本段。
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_vitalsign_stay_chart
-  ON mimiciv_derived.vitalsign (stay_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_chemistry_hadm_chart
-  ON mimiciv_derived.chemistry (hadm_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_bg_hadm_chart
-  ON mimiciv_derived.bg (hadm_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_enzyme_hadm_chart
-  ON mimiciv_derived.enzyme (hadm_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_coagulation_hadm_chart
-  ON mimiciv_derived.coagulation (hadm_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_cbc_hadm_chart
-  ON mimiciv_derived.complete_blood_count (hadm_id, charttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_weight_stay
-  ON mimiciv_derived.weight_durations (stay_id, starttime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_sofa_stay_end
-  ON mimiciv_derived.sofa (stay_id, endtime DESC);
-CREATE INDEX IF NOT EXISTS idx_mimic_derived_ne_stay_end
-  ON mimiciv_derived.norepinephrine_equivalent_dose (stay_id, endtime DESC);
+CREATE INDEX IF NOT EXISTS idx_mimic_derived_kdigo_stages_stay_chart
+  ON mimiciv_derived.kdigo_stages (stay_id, charttime DESC);
 
--- 步骤 2：建 baseline 物化视图（有上面索引后会快很多）
+DROP MATERIALIZED VIEW IF EXISTS data_extract_crrt.subgroup_flags_v1 CASCADE;
 
-DROP MATERIALIZED VIEW IF EXISTS data_extract_crrt.cohort_baseline_v1 CASCADE;
-
-CREATE MATERIALIZED VIEW data_extract_crrt.cohort_baseline_v1 AS
+CREATE MATERIALIZED VIEW data_extract_crrt.subgroup_flags_v1 AS
 WITH
 cohort AS (
-  SELECT
-    stay_id,
-    subject_id,
-    hadm_id,
-    intime,
-    outtime,
-    age,
-    gender,
-    race,
-    insurance,
-    los_icu,
-    kdigo3_time,
-    t0_time
+  SELECT subject_id, hadm_id, stay_id, t0_time
   FROM data_extract_crrt."301_ss_aki3_t0_no_rrt_cohort"
-)
-SELECT
-  c.subject_id,
-  c.hadm_id,
-  c.stay_id,
-  c.intime,
-  c.outtime,
-  c.t0_time,
-  c.age,
-  c.gender,
-  c.race,
-  c.insurance,
-  w.weight_kg,
-  cc.charlson_comorbidity_index AS cci,
-  v.hr,
-  v.sbp,
-  v.dbp,
-  v.map,
-  v.rr,
-  v.spo2,
-  v.temp_c,
-  cb.wbc,
-  cb.hb,
-  cb.plt,
-  ch.na,
-  ch.cl,
-  ch.k,
-  ch.hco3,
-  ch.scr,
-  ch.bun,
-  enz.ast,
-  enz.alt,
-  b.ph,
-  b.lactate,
-  b.pao2,
-  b.fio2,
-  CASE WHEN b.pao2 IS NOT NULL AND b.fio2 IS NOT NULL AND b.fio2 > 0 THEN b.pao2 / b.fio2 ELSE NULL END AS pf_ratio,
-  cg.inr,
-  sp.mv_baseline,
-  sp.vaso_baseline,
-  sp.ne_eq_baseline,
-  sf.sofa_baseline
-FROM cohort c
-LEFT JOIN LATERAL (
-  SELECT wd.weight AS weight_kg
-  FROM mimiciv_derived.weight_durations wd
-  WHERE wd.stay_id = c.stay_id
-    AND wd.starttime <= c.t0_time
-    AND COALESCE(wd.endtime, c.t0_time) >= c.t0_time
-    AND wd.weight IS NOT NULL
-  ORDER BY wd.starttime DESC
-  LIMIT 1
-) w ON true
-LEFT JOIN mimiciv_derived.charlson cc ON cc.hadm_id = c.hadm_id
-LEFT JOIN LATERAL (
-  SELECT v.heart_rate AS hr, v.sbp, v.dbp, v.mbp AS map, v.resp_rate AS rr, v.spo2, v.temperature AS temp_c
-  FROM mimiciv_derived.vitalsign v
-  WHERE v.stay_id = c.stay_id
-    AND v.charttime > c.t0_time - interval '6 hour'
-    AND v.charttime <= c.t0_time
-  ORDER BY v.charttime DESC
-  LIMIT 1
-) v ON true
-LEFT JOIN LATERAL (
-  SELECT ch.sodium AS na, ch.chloride AS cl, ch.potassium AS k, ch.bicarbonate AS hco3, ch.creatinine AS scr, ch.bun
-  FROM mimiciv_derived.chemistry ch
-  WHERE ch.hadm_id = c.hadm_id
-    AND ch.charttime > c.t0_time - interval '6 hour'
-    AND ch.charttime <= c.t0_time
-  ORDER BY ch.charttime DESC
-  LIMIT 1
-) ch ON true
-LEFT JOIN LATERAL (
-  SELECT b.ph, b.lactate, b.po2 AS pao2, b.fio2
-  FROM mimiciv_derived.bg b
-  WHERE b.hadm_id = c.hadm_id
-    AND b.charttime > c.t0_time - interval '6 hour'
-    AND b.charttime <= c.t0_time
-  ORDER BY b.charttime DESC
-  LIMIT 1
-) b ON true
-LEFT JOIN LATERAL (
-  SELECT e.ast, e.alt
-  FROM mimiciv_derived.enzyme e
-  WHERE e.hadm_id = c.hadm_id
-    AND e.charttime > c.t0_time - interval '6 hour'
-    AND e.charttime <= c.t0_time
-  ORDER BY e.charttime DESC
-  LIMIT 1
-) enz ON true
-LEFT JOIN LATERAL (
-  SELECT cg.inr
-  FROM mimiciv_derived.coagulation cg
-  WHERE cg.hadm_id = c.hadm_id
-    AND cg.charttime > c.t0_time - interval '6 hour'
-    AND cg.charttime <= c.t0_time
-  ORDER BY cg.charttime DESC
-  LIMIT 1
-) cg ON true
-LEFT JOIN LATERAL (
-  SELECT cb.wbc, cb.hemoglobin AS hb, cb.platelet AS plt
-  FROM mimiciv_derived.complete_blood_count cb
-  WHERE cb.hadm_id = c.hadm_id
-    AND cb.charttime > c.t0_time - interval '6 hour'
-    AND cb.charttime <= c.t0_time
-  ORDER BY cb.charttime DESC
-  LIMIT 1
-) cb ON true
-LEFT JOIN LATERAL (
+  WHERE t0_time IS NOT NULL
+),
+
+cohort_base AS (
   SELECT
-    CASE WHEN EXISTS (
-      SELECT 1 FROM mimiciv_derived.ventilation v
-      WHERE v.stay_id = c.stay_id
-        AND v.starttime < c.t0_time
-        AND COALESCE(v.endtime, c.t0_time) > c.t0_time - interval '6 hour'
-    ) THEN 1 ELSE 0 END AS mv_baseline,
-    CASE WHEN EXISTS (
-      SELECT 1 FROM mimiciv_derived.vasoactive_agent va
-      WHERE va.stay_id = c.stay_id
-        AND va.starttime < c.t0_time
-        AND COALESCE(va.endtime, c.t0_time) > c.t0_time - interval '6 hour'
-        AND (COALESCE(va.norepinephrine, 0) > 0 OR COALESCE(va.epinephrine, 0) > 0
-             OR COALESCE(va.phenylephrine, 0) > 0 OR COALESCE(va.vasopressin, 0) > 0 OR COALESCE(va.dopamine, 0) > 0)
-    ) THEN 1 ELSE 0 END AS vaso_baseline,
-    (SELECT ne.norepinephrine_equivalent_dose
-     FROM mimiciv_derived.norepinephrine_equivalent_dose ne
-     WHERE ne.stay_id = c.stay_id
-       AND ne.starttime < c.t0_time
-       AND COALESCE(ne.endtime, c.t0_time) > c.t0_time - interval '6 hour'
-       AND ne.norepinephrine_equivalent_dose IS NOT NULL
-     ORDER BY ne.endtime DESC
-     LIMIT 1) AS ne_eq_baseline
-  FROM (SELECT 1) _
-) sp ON true
-LEFT JOIN LATERAL (
-  SELECT s.sofa_24hours AS sofa_baseline
-  FROM mimiciv_derived.sofa s
-  WHERE s.stay_id = c.stay_id
-    AND s.endtime > c.t0_time - interval '6 hour'
-    AND s.endtime <= c.t0_time
-    AND s.sofa_24hours IS NOT NULL
-  ORDER BY s.endtime DESC
-  LIMIT 1
-) sf ON true;
+    c.subject_id,
+    c.hadm_id,
+    c.stay_id,
+    c.t0_time,
+    COALESCE(b.weight_kg, b.weight) AS weight_kg,
+    COALESCE(b.ne_eq_baseline, b.norepi_equiv, b.ne_equiv) AS ne_ugkgmin,
+    COALESCE(b.mv_baseline, b.mv_flag, 0)::int AS mv_flag,
+    COALESCE(b.lactate, b.lactate_last6h) AS lactate_mmol,
+    COALESCE(b.pf_ratio, b.pfratio, b.pf) AS pf_ratio
+  FROM cohort c
+  LEFT JOIN data_extract_crrt.cohort_baseline_v1 b ON b.stay_id = c.stay_id
+),
 
-CREATE INDEX IF NOT EXISTS idx_baseline_stay
-  ON data_extract_crrt.cohort_baseline_v1 (stay_id);
+uo6h AS (
+  SELECT
+    cb.stay_id,
+    CASE
+      WHEN cb.weight_kg IS NULL OR cb.weight_kg <= 0 THEN NULL
+      ELSE (
+        SELECT SUM(u.urineoutput)
+        FROM mimiciv_derived.urine_output u
+        WHERE u.stay_id = cb.stay_id
+          AND u.charttime > cb.t0_time - interval '6 hour'
+          AND u.charttime <= cb.t0_time
+          AND u.urineoutput IS NOT NULL
+      ) / cb.weight_kg / 6.0
+    END AS uo_mlkgph_t0_last6h
+  FROM cohort_base cb
+),
 
-CREATE INDEX IF NOT EXISTS idx_baseline_hadm
-  ON data_extract_crrt.cohort_baseline_v1 (hadm_id);
+kdigo_at_t0 AS (
+  SELECT
+    cb.stay_id,
+    k.aki_stage AS aki_stage_uo_t0,
+    k.aki_stage AS aki_stage_creat_t0
+  FROM cohort_base cb
+  LEFT JOIN LATERAL (
+    SELECT aki_stage
+    FROM mimiciv_derived.kdigo_stages k
+    WHERE k.stay_id = cb.stay_id AND k.charttime <= cb.t0_time
+    ORDER BY k.charttime DESC
+    LIMIT 1
+  ) k ON true
+),
 
-CREATE INDEX IF NOT EXISTS idx_baseline_subject
-  ON data_extract_crrt.cohort_baseline_v1 (subject_id);
+final AS (
+  SELECT
+    cb.subject_id,
+    cb.hadm_id,
+    cb.stay_id,
+    cb.t0_time,
+    uo.uo_mlkgph_t0_last6h,
+    cb.ne_ugkgmin,
+    cb.mv_flag,
+    cb.lactate_mmol,
+    cb.pf_ratio,
+    k.aki_stage_uo_t0,
+    k.aki_stage_creat_t0,
 
-ANALYZE data_extract_crrt.cohort_baseline_v1;
+    CASE
+      WHEN uo.uo_mlkgph_t0_last6h IS NULL THEN 'missing'
+      WHEN uo.uo_mlkgph_t0_last6h < 0.3 THEN 'oliguria_<0.3'
+      WHEN uo.uo_mlkgph_t0_last6h < 0.5 THEN 'oliguria_0.3-0.5'
+      ELSE 'non_oliguric_>=0.5'
+    END AS oliguria_3grp,
 
--- 在 Navicat 显示表格（需先成功执行 101→201→301，再执行本脚本）
-SELECT * FROM data_extract_crrt.cohort_baseline_v1;
+    CASE
+      WHEN cb.ne_ugkgmin IS NULL THEN 'missing'
+      WHEN cb.ne_ugkgmin < 0.1 THEN 'NE_<0.1'
+      WHEN cb.ne_ugkgmin < 0.3 THEN 'NE_0.1-0.3'
+      ELSE 'NE_>=0.3'
+    END AS ne_3grp,
+
+    CASE WHEN cb.mv_flag = 1 THEN 'MV' ELSE 'no_MV' END AS mv_2grp,
+
+    CASE
+      WHEN cb.lactate_mmol IS NULL THEN 'missing'
+      WHEN cb.lactate_mmol >= 4 THEN 'lactate_>=4'
+      ELSE 'lactate_<4'
+    END AS lactate_2grp,
+
+    CASE
+      WHEN cb.pf_ratio IS NULL THEN 'missing'
+      WHEN cb.pf_ratio < 100 THEN 'PF_<100'
+      WHEN cb.pf_ratio < 200 THEN 'PF_100-200'
+      ELSE 'PF_>=200'
+    END AS pf_3grp,
+
+    CASE
+      WHEN k.aki_stage_uo_t0 IS NULL AND k.aki_stage_creat_t0 IS NULL THEN 'unknown'
+      WHEN COALESCE(k.aki_stage_uo_t0, 0) = 3 AND COALESCE(k.aki_stage_creat_t0, 0) < 3 THEN 'uo_driven'
+      WHEN COALESCE(k.aki_stage_creat_t0, 0) = 3 AND COALESCE(k.aki_stage_uo_t0, 0) < 3 THEN 'scr_driven'
+      WHEN COALESCE(k.aki_stage_creat_t0, 0) = 3 AND COALESCE(k.aki_stage_uo_t0, 0) = 3 THEN 'mixed'
+      ELSE 'unknown'
+    END AS aki_pathway
+  FROM cohort_base cb
+  LEFT JOIN uo6h uo ON uo.stay_id = cb.stay_id
+  LEFT JOIN kdigo_at_t0 k ON k.stay_id = cb.stay_id
+)
+SELECT * FROM final;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subgroup_flags_v1_stay
+  ON data_extract_crrt.subgroup_flags_v1 (stay_id);
+CREATE INDEX IF NOT EXISTS idx_subgroup_flags_v1_oliguria
+  ON data_extract_crrt.subgroup_flags_v1 (oliguria_3grp);
+CREATE INDEX IF NOT EXISTS idx_subgroup_flags_v1_ne
+  ON data_extract_crrt.subgroup_flags_v1 (ne_3grp);
+CREATE INDEX IF NOT EXISTS idx_subgroup_flags_v1_lactate
+  ON data_extract_crrt.subgroup_flags_v1 (lactate_2grp);
+CREATE INDEX IF NOT EXISTS idx_subgroup_flags_v1_pf
+  ON data_extract_crrt.subgroup_flags_v1 (pf_3grp);
+
+ANALYZE data_extract_crrt.subgroup_flags_v1;
+
+-- Navicat: run only the line below to display the table
+SELECT * FROM data_extract_crrt.subgroup_flags_v1 ORDER BY stay_id;

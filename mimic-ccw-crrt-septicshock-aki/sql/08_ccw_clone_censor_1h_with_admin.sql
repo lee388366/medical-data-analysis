@@ -146,5 +146,6 @@ CREATE INDEX IF NOT EXISTS idx_ccw_clone_long_v2_atrisk
 
 ANALYZE data_extract_crrt.ccw_clone_long_0_24h_1h_v2;
 
--- 在 Navicat 显示（需先有 606、301）
-SELECT * FROM data_extract_crrt.ccw_clone_long_0_24h_1h_v2 ORDER BY stay_id, strategy, hour_index LIMIT 500;
+-- 导出完整表格：下面 SELECT 返回整表全部数据，在 Navicat 中会得到完整结果集，可右键导出为 CSV/Excel（约 3.7 万行）
+SELECT * FROM data_extract_crrt.ccw_clone_long_0_24h_1h_v2
+ORDER BY stay_id, strategy, hour_index;

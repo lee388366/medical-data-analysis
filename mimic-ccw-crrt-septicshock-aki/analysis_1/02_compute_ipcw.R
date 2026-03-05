@@ -1,5 +1,8 @@
 library(dplyr)
 
+# 读取 01 产出的 long 数据（连库结果已存为 RDS）
+df <- readRDS("analysis_data_ccw.rds")
+
 # denominator model
 model_denom <- glm(
   censor_k_total ~
@@ -65,3 +68,6 @@ df <- df %>%
   )
 
 summary(df$ipcw_trunc)
+
+# 保存带权重的 long 数据，供 03–07 使用
+saveRDS(df, "analysis_data_ccw.rds")

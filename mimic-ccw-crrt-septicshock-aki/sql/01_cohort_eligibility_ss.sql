@@ -98,4 +98,4 @@ CREATE INDEX IF NOT EXISTS idx_101_core_hadm
 ANALYZE data_extract_crrt."101_patients_core_cohort_sepsis";
 
 -- 输出前 500 行，便于在 Navicat 结果窗口看到表格
-SELECT * FROM data_extract_crrt."101_patients_core_cohort_sepsis" LIMIT 500;
+SELECT * FROM data_extract_crrt."101_patients_core_cohort_sepsis";

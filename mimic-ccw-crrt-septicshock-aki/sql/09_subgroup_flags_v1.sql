@@ -1,21 +1,21 @@
 -- ============================================================
 -- 05) Baseline Table 1 dataset (t0-6h, t0]
--- Output: data_extract_crrt.cohort_baseline_v1
---
+-- Output:
+--   data_extract_crrt.cohort_baseline_v1
 -- Notes:
 --   Uses "last observation" (single latest charttime/endtime per table) in baseline window.
---   Performance: one LATERAL per table (one scan per cohort row) instead of many scalar subqueries.
+--   Performance: LATERAL join per table (one scan per cohort row) instead of many scalar subqueries.
 --
--- 本地 MIMIC 表/列：
---   weight_durations; charlson; vitalsign; chemistry(bun，无 urea_nitrogen);
---   enzyme(ast,alt); bg(po2,fio2); coagulation; complete_blood_count;
---   ventilation; vasoactive_agent; norepinephrine_equivalent_dose(starttime,endtime，无 charttime);
---   sofa(sofa_24hours,endtime).
+-- 本地 MIMIC 表/列已核对：
+--   weight_durations; charlson; vitalsign; chemistry(bun，无 urea_nitrogen); enzyme(ast,alt); bg(po2,fio2); coagulation; complete_blood_count;
+--   ventilation; vasoactive_agent; norepinephrine_equivalent_dose(starttime,endtime); sofa(sofa_24hours,endtime).
+--
+-- 本地已查：mimiciv_derived 下当前无索引。下方索引为 baseline 加速用，执行一次即可（与建 MV 同次或先跑均可）。
 -- ============================================================
 
 CREATE SCHEMA IF NOT EXISTS data_extract_crrt;
 
--- 索引：无索引时 LATERAL 会极慢；已建过可跳过
+-- 步骤 1：为 LATERAL 查找建索引（无索引时 baseline 会极慢）。若已建过可跳过本段。
 CREATE INDEX IF NOT EXISTS idx_mimic_derived_vitalsign_stay_chart
   ON mimiciv_derived.vitalsign (stay_id, charttime DESC);
 CREATE INDEX IF NOT EXISTS idx_mimic_derived_chemistry_hadm_chart
@@ -34,6 +34,8 @@ CREATE INDEX IF NOT EXISTS idx_mimic_derived_sofa_stay_end
   ON mimiciv_derived.sofa (stay_id, endtime DESC);
 CREATE INDEX IF NOT EXISTS idx_mimic_derived_ne_stay_end
   ON mimiciv_derived.norepinephrine_equivalent_dose (stay_id, endtime DESC);
+
+-- 步骤 2：建 baseline 物化视图（有上面索引后会快很多）
 
 DROP MATERIALIZED VIEW IF EXISTS data_extract_crrt.cohort_baseline_v1 CASCADE;
 
@@ -201,12 +203,14 @@ LEFT JOIN LATERAL (
 
 CREATE INDEX IF NOT EXISTS idx_baseline_stay
   ON data_extract_crrt.cohort_baseline_v1 (stay_id);
+
 CREATE INDEX IF NOT EXISTS idx_baseline_hadm
   ON data_extract_crrt.cohort_baseline_v1 (hadm_id);
+
 CREATE INDEX IF NOT EXISTS idx_baseline_subject
   ON data_extract_crrt.cohort_baseline_v1 (subject_id);
 
 ANALYZE data_extract_crrt.cohort_baseline_v1;
 
--- Navicat：仅选中下面一行执行以显示表格
+-- 在 Navicat 显示表格（需先成功执行 101→201→301，再执行本脚本）
 SELECT * FROM data_extract_crrt.cohort_baseline_v1;

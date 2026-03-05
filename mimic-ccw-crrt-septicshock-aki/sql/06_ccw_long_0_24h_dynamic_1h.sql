@@ -172,6 +172,12 @@ LEFT JOIN LATERAL (SELECT ch.potassium AS k_last6h, ch.bicarbonate AS hco3_last6
 CREATE INDEX IF NOT EXISTS idx_ccw_long_36h_stay_hour ON data_extract_crrt.ccw_long_0_36h_1h_v1 (stay_id, hour_index);
 ANALYZE data_extract_crrt.ccw_long_0_36h_1h_v1;
 
--- 在 Navicat 显示（先跑 606 建索引，再跑本脚本）
-SELECT * FROM data_extract_crrt.ccw_long_0_12h_1h_v1 ORDER BY stay_id, hour_index LIMIT 300;
--- SELECT * FROM data_extract_crrt.ccw_long_0_36h_1h_v1 ORDER BY stay_id, hour_index LIMIT 500;
+-- 导出完整表格：下面三个 SELECT 会返回三张表的全部数据，在 Navicat 中会得到 3 个结果集，可分别右键导出为 CSV/Excel
+SELECT * FROM data_extract_crrt.ccw_long_0_24h_1h_v1
+ORDER BY stay_id, hour_index;
+
+SELECT * FROM data_extract_crrt.ccw_long_0_12h_1h_v1
+ORDER BY stay_id, hour_index;
+
+SELECT * FROM data_extract_crrt.ccw_long_0_36h_1h_v1
+ORDER BY stay_id, hour_index;

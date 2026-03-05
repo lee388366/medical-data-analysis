@@ -1,3 +1,4 @@
+analysis/
 01_prepare_ccw_dataset.R
 02_compute_ipcw.R
 03_survival_analysis.R

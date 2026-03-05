@@ -36,11 +36,11 @@ cohort_base AS (
     c.hadm_id,
     c.stay_id,
     c.t0_time,
-    COALESCE(b.weight_kg, b.weight) AS weight_kg,
-    COALESCE(b.ne_eq_baseline, b.norepi_equiv, b.ne_equiv) AS ne_ugkgmin,
-    COALESCE(b.mv_baseline, b.mv_flag, 0)::int AS mv_flag,
-    COALESCE(b.lactate, b.lactate_last6h) AS lactate_mmol,
-    COALESCE(b.pf_ratio, b.pfratio, b.pf) AS pf_ratio
+    b.weight_kg,
+    b.ne_eq_baseline AS ne_ugkgmin,
+    COALESCE(b.mv_baseline, 0)::int AS mv_flag,
+    b.lactate AS lactate_mmol,
+    b.pf_ratio
   FROM cohort c
   LEFT JOIN data_extract_crrt.cohort_baseline_v1 b ON b.stay_id = c.stay_id
 ),

@@ -5,6 +5,8 @@
 --   data_extract_crrt.ccw_clone_long_0_36h_1h_v2
 -- Input: ccw_long_0_12h_1h_v1 / ccw_long_0_36h_1h_v1（606_grace 产出）、301
 -- 列名 task_completed_within_24h / task_maintained_no_early_24h 沿用，语义为“在当表 grace 内”。
+--
+-- 执行顺序：必须先跑 606_ccw_long_grace_sensitivity.sql，生成 12h/36h long 表后再跑本脚本。
 -- ============================================================
 
 CREATE SCHEMA IF NOT EXISTS data_extract_crrt;
